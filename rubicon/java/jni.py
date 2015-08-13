@@ -2,6 +2,9 @@ from ctypes import *
 from ctypes import util
 import os
 
+import sys
+PY3K = sys.version_info >= (3, 0)
+
 from .types import *
 
 # If we're on Android, the SO file isn't on the LD_LIBRARY_PATH,
@@ -20,8 +23,17 @@ java.GetVersion.argtypes = []
 
 java.DefineClass.restype = jclass
 java.DefineClass.argtypes = [c_char_p, jobject, jbyte_p, jsize]
-java.FindClass.restype = jclass
-java.FindClass.argtypes = [c_char_p]
+java.FindClassB = getattr(java, "FindClass")
+java.FindClassB.restype = jclass
+java.FindClassB.argtypes = [c_char_p]
+def FindClass(x):
+    if isinstance(x, str):
+        x = x.encode("utf-8")
+    return java.FindClassB(x)
+if PY3K:
+    java.FindClass = FindClass
+else:
+    java.FindClass = java.FindClassB
 
 java.FromReflectedMethod.restype = jmethodID
 java.FromReflectedMethod.argtypes = [jobject]
@@ -81,8 +93,20 @@ java.GetObjectClass.argtypes = [jobject]
 java.IsInstanceOf.restype = jboolean
 java.IsInstanceOf.argtypes = [jobject, jclass]
 
-java.GetMethodID.restype = jmethodID
-java.GetMethodID.argtypes = [jclass, c_char_p, c_char_p]
+java.GetMethodIDB = getattr(java, "GetMethodID")
+java.GetMethodIDB.restype = jmethodID
+java.GetMethodIDB.argtypes = [jclass, c_char_p, c_char_p]
+def GetMethodID(x, y, z):
+    if isinstance(y, str):
+        y = y.encode("utf-8")
+    if isinstance(z, str):
+        z = z.encode("utf-8")
+    return java.GetMethodIDB(x, y, z)
+if PY3K:
+    java.GetMethodID = GetMethodID
+else:
+    java.GetMethodID = java.GetMethodIDB
+
 
 java.CallObjectMethod.restype = jobject
 java.CallObjectMethod.argtypes = [jobject, jmethodID]
@@ -126,8 +150,19 @@ java.CallNonvirtualDoubleMethod.argtypes = [jobject, jclass, jmethodID]
 java.CallNonvirtualVoidMethod.restype = None
 java.CallNonvirtualVoidMethod.argtypes = [jobject, jclass, jmethodID]
 
-java.GetFieldID.restype = jfieldID
-java.GetFieldID.argtypes = [jclass, c_char_p, c_char_p]
+java.GetFieldIDB = getattr(java, "GetFieldID")
+java.GetFieldIDB.restype = jfieldID
+java.GetFieldIDB.argtypes = [jclass, c_char_p, c_char_p]
+def GetFieldID(x, y, z):
+    if isinstance(y, str):
+        y = y.encode("utf-8")
+    if isinstance(z, str):
+        z = z.encode("utf-8")
+    return java.GetFieldIDB(x, y, z)
+if PY3K:
+    java.GetFieldID = GetFieldID
+else:
+    java.GetFieldID = java.GetFieldIDB
 
 java.GetObjectField.restype = jobject
 java.GetObjectField.argtypes = [jobject, jfieldID]
@@ -167,8 +202,19 @@ java.SetFloatField.argtypes = [jobject, jfieldID, jfloat]
 java.SetDoubleField.restype = None
 java.SetDoubleField.argtypes = [jobject, jfieldID, jdouble]
 
-java.GetStaticMethodID.restype = jmethodID
-java.GetStaticMethodID.argtypes = [jclass, c_char_p, c_char_p]
+java.GetStaticMethodIDB = getattr(java, "GetStaticMethodID")
+java.GetStaticMethodIDB.restype = jmethodID
+java.GetStaticMethodIDB.argtypes = [jclass, c_char_p, c_char_p]
+def GetStaticMethodID(x, y, z):
+    if isinstance(y, str):
+        y = y.encode("utf-8")
+    if isinstance(z, str):
+        z = z.encode("utf-8")
+    return java.GetStaticMethodIDB(x, y, z)
+if PY3K:
+    java.GetStaticMethodID = GetStaticMethodID
+else:
+    java.GetStaticMethodID = java.GetStaticMethodIDB
 
 java.CallStaticObjectMethod.restype = jobject
 java.CallStaticObjectMethod.argtypes = [jclass, jmethodID]
@@ -191,8 +237,19 @@ java.CallStaticDoubleMethod.argtypes = [jclass, jmethodID]
 java.CallStaticVoidMethod.restype = None
 java.CallStaticVoidMethod.argtypes = [jclass, jmethodID]
 
-java.GetStaticFieldID.restype = jfieldID
-java.GetStaticFieldID.argtypes = [jclass, c_char_p, c_char_p]
+java.GetStaticFieldIDB = getattr(java, "GetStaticFieldID")
+java.GetStaticFieldIDB.restype = jfieldID
+java.GetStaticFieldIDB.argtypes = [jclass, c_char_p, c_char_p]
+def GetStaticFieldID(x, y, z):
+    if isinstance(y, str):
+        y = y.encode("utf-8")
+    if isinstance(z, str):
+        z = z.encode("utf-8")
+    return java.GetStaticFieldIDB(x, y, z)
+if PY3K:
+    java.GetStaticFieldID = GetStaticFieldID
+else:
+    java.GetStaticFieldID = java.GetStaticFieldIDB
 
 java.GetStaticObjectField.restype = jobject
 java.GetStaticObjectField.argtypes = [jclass, jfieldID]
@@ -241,8 +298,18 @@ java.GetStringChars.argtypes = [jstring, jboolean_p]
 java.ReleaseStringChars.restype = None
 java.ReleaseStringChars.argtypes = [jstring, jchar_p]
 
-java.NewStringUTF.restype = jstring
-java.NewStringUTF.argtypes = [c_char_p]
+java.NewStringUTFB = getattr(java, "NewStringUTF")
+java.NewStringUTFB.restype = jstring
+java.NewStringUTFB.argtypes = [c_char_p]
+def NewStringUTF(x):
+    if isinstance(x, str):
+        x = x.encode("utf-8")
+    return java.NewStringUTFB(x)
+if PY3K:
+    java.NewStringUTF = NewStringUTF
+else:
+    java.NewStringUTF = java.NewStringUTFB
+
 java.GetStringUTFLength.restype = jsize
 java.GetStringUTFLength.argtypes = [jstring]
 java.GetStringUTFChars.restype = c_char_p

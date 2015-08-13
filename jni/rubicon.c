@@ -4,7 +4,13 @@
 #include <dlfcn.h>
 #endif
 
-#include "python2.7/Python.h"
+#include "Python.h"
+#if PY_MAJOR_VERSION >= 3
+#define IS_PY3K
+#define PyInt_FromLong PyLong_FromLong
+#endif
+#define QUOTE(str) #str
+#define EXPAND_AND_QUOTE(str) QUOTE(str)
 
 #include "rubicon.h"
 
@@ -818,7 +824,9 @@ JNIEXPORT jint JNICALL Java_org_pybee_rubicon_Python_start(JNIEnv *env, jobject 
 
 #ifdef LIBPYTHON_RTLD_GLOBAL
     // make libpython symbols availiable for everyone
-    dlopen("libpython2.7.so", RTLD_LAZY|RTLD_GLOBAL|RTLD_NOLOAD);
+    if (dlopen(EXPAND_AND_QUOTE(LIBPYTHON_RTLD_GLOBAL_NAME), RTLD_LAZY|RTLD_GLOBAL|RTLD_NOLOAD) == NULL) {
+        LOG_E("Error reloading '" EXPAND_AND_QUOTE(LIBPYTHON_RTLD_GLOBAL_NAME) "' with RTLD_GLOBAL");
+    };
 #endif
 
     // Special environment to prefer .pyo, and don't write bytecode if .py are found
@@ -894,7 +902,12 @@ JNIEXPORT jint JNICALL Java_org_pybee_rubicon_Python_start(JNIEnv *env, jobject 
         LOG_D("Python runtime started.");
     }
 #endif
-
+#ifdef IS_PY3K
+    ret = PyRun_SimpleString("import sys;sys.argv=['librubicon']\n");
+    if (ret != 0) {
+        LOG_E("Error setting sys.argv");
+    }
+#endif
     LOG_I("Import rubicon...");
     PyObject *rubicon;
 

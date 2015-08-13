@@ -7,14 +7,34 @@ import itertools
 from .jni import *
 from .types import *
 
+if PY3K:
+    basestring = str
+
+    class StrBDict(dict):
+        def __init__(self,*arg,**kw):
+            super(StrBDict, self).__init__(*arg, **kw)
+
+        def __getitem__(self, key):
+            if not isinstance(key, (str, int)):
+                key = key.decode("utf-8")
+            return self.__dict__[key]
+
+        def __setitem__(self, key, item):
+            if not isinstance(key, (str, int)):
+                key = key.decode("utf-8")
+            self.__dict__[key] = item
+
+else:
+    StrBDict = dict
+
 # A cache of known JavaClass instances. This is requried so that when
 # we do a return_cast() to a return type, we don't have to recreate
 # the class every time - we can re-use the existing class.
-_class_cache = {}
+_class_cache = StrBDict()
 
 # A cache of known JavaInterface proxies. This is used by the dispatch
 # mechanism to direct callbacks to the right place.
-_proxy_cache = {}
+_proxy_cache = StrBDict()
 
 def dispatch(instance, method, args):
     """The mechanism by which Java can invoke methods in Python.
@@ -240,6 +260,8 @@ def type_names_for_params(params):
             raise RuntimeError("Unable to get name of type for parameter.")
 
         param_type = java.GetStringUTFChars(cast(type_name, jstring), None)
+        if PY3K:
+            param_type = param_type.decode("utf-8")
 
         sig.append(signature_for_type_name(param_type))
 
@@ -274,7 +296,10 @@ def return_cast(raw, return_signature):
     elif return_signature == 'Ljava/lang/String;':
         # Check for NULL return values
         if raw.value:
-            return java.GetStringUTFChars(cast(raw, jstring), None).decode('utf-8')
+            retvalue = java.GetStringUTFChars(cast(raw, jstring), None)
+            if PY3K:
+                retvalue = retvalue.decode("utf-8")
+            return retvalue
         return None
 
     elif return_signature.startswith('L'):
@@ -325,7 +350,10 @@ def dispatch_cast(raw, type_signature):
     elif type_signature == 'Ljava/lang/String;':
         # Check for NULL return values
         if c_void_p(raw).value:
-            return java.GetStringUTFChars(cast(raw, jstring), None).decode('utf-8')
+            retvalue = java.GetStringUTFChars(cast(raw, jstring), None)
+            if PY3K:
+                retvalue = retvalue.decode('utf-8')
+            return retvalue
         return None
 
     elif type_signature.startswith('L'):
@@ -565,7 +593,10 @@ def _cache_field(java_class, name, static):
         java_type = java.CallObjectMethod(java_field, reflect.Field__getType)
         type_name = java.CallObjectMethod(java_type, reflect.Class__getName)
 
-        signature = signature_for_type_name(java.GetStringUTFChars(cast(type_name, jstring), None))
+        typename = java.GetStringUTFChars(cast(type_name, jstring), None)
+        if PY3K:
+            typename = typename.decode("utf-8")
+        signature = signature_for_type_name(typename)
 
         if static:
             wrapper = StaticJavaField(java_class=java_class, name=name, signature=signature)
@@ -604,6 +635,8 @@ def _cache_methods(java_class, name, static):
             java_type = java.CallObjectMethod(java_method, reflect.Method__getReturnType)
             type_name = java.CallObjectMethod(java_type, reflect.Class__getName)
             return_type_name = java.GetStringUTFChars(cast(type_name, jstring), None)
+            if PY3K:
+                return_type_name = return_type_name.decode("utf-8")
 
             wrapper.add(signature_for_params(params), signature_for_type_name(return_type_name))
             java.DeleteLocalRef(type_name)
@@ -797,6 +830,8 @@ class JavaClass(type):
 
                 name = java.CallObjectMethod(java_interface, reflect.Class__getName)
                 name_str = java.GetStringUTFChars(cast(name, jstring), None)
+                if PY3K:
+                    name_str = name_str.decode("utf-8")
 
                 # print("  %s: adding interface alternate %s" % (self.__dict__['_descriptor'], name_str))
                 alternates.append('L%s;' % name_str.replace('.', '/'))
@@ -810,6 +845,8 @@ class JavaClass(type):
             while java_superclass.value is not None:
                 name = java.CallObjectMethod(java_superclass, reflect.Class__getName)
                 name_str = java.GetStringUTFChars(cast(name, jstring), None)
+                if PY3K:
+                    name_str = name_str.decode("utf-8")
 
                 # print("  %s: adding superclass alternate %s" % (self.__dict__['_descriptor'], name_str))
                 alternates.append('L%s;' % name_str.replace('.', '/'))
@@ -821,7 +858,9 @@ class JavaClass(type):
                 java_superclass = super2
             java.DeleteLocalRef(java_superclass)
 
-            java_class = super(JavaClass, cls).__new__(cls, descriptor.encode('utf-8'), (JavaInstance,), {
+            if not PY3K:
+                descriptor = descriptor.encode("utf-8")
+            java_class = super(JavaClass, cls).__new__(cls, descriptor, (JavaInstance,), {
                     '_descriptor': descriptor,
                     '_jni': jni,
                     '_alternates': alternates,
@@ -931,7 +970,9 @@ class JavaInterface(type):
         if len(args) == 1:
             descriptor, = args
             # print("Creating Java Interface " + descriptor)
-            java_class = super(JavaInterface, cls).__new__(cls, descriptor.encode('utf-8'), (JavaProxy,), {
+            if not PY3K:
+                descriptor = descriptor.encode("utf-8")
+            java_class = super(JavaInterface, cls).__new__(cls, descriptor, (JavaProxy,), {
                     '_descriptor': descriptor,
                     '_alternates': ['L%s;' % descriptor],
                     '_methods': {}
@@ -971,6 +1012,8 @@ class JavaInterface(type):
                 if not static:
                     name = java.CallObjectMethod(java_method, reflect.Method__getName)
                     name_str = java.GetStringUTFChars(cast(name, jstring), None)
+                    if PY3K:
+                        name_str = name_str.decode("utf-8")
 
                     params = java.CallObjectMethod(java_method, reflect.Method__getParameterTypes)
                     params = cast(params, jobjectArray)
