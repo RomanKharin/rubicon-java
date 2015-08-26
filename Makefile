@@ -42,7 +42,7 @@ dist/test.jar: org/pybee/rubicon/test/BaseExample.class org/pybee/rubicon/test/E
 
 dist/librubicon.$(SOEXT): jni/rubicon.o
 	mkdir -p dist
-	gcc -shared -o $@ $< $(PYLDFLAGS)
+	gcc -shared -Wl,--no-undefined -o $@ $< $(PYLDFLAGS)
 
 test: all
 	java org.pybee.rubicon.test.Test

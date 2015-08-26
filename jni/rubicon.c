@@ -4,6 +4,12 @@
 #include <dlfcn.h>
 #endif
 
+#ifdef ANDROID
+#include <errno.h>
+#ifndef __ANDROID__
+#define __ANDROID__
+#endif
+#endif
 #include "Python.h"
 #if PY_MAJOR_VERSION >= 3
 #define IS_PY3K
@@ -15,7 +21,6 @@
 #include "rubicon.h"
 
 #ifdef ANDROID
-
 /**************************************************************************
  **************************************************************************
  * Android logging interface
@@ -86,9 +91,24 @@ static PyMethodDef AndroidMethods[] = {
     {NULL, NULL, 0, NULL}
 };
 
+#ifndef IS_PY3K
 PyMODINIT_FUNC initandroid(void) {
     (void) Py_InitModule("android", AndroidMethods);
 }
+#else
+static struct PyModuleDef AndroidModPyDem =
+{
+    PyModuleDef_HEAD_INIT,
+    "android", /* name of module */
+    "",          /* module documentation, may be NULL */
+    -1,          /* size of per-interpreter state of the module, or -1 if the module keeps state in global variables. */
+    AndroidMethods
+};
+PyMODINIT_FUNC PyInit_android(void)
+{
+    return PyModule_Create(&AndroidModPyDem);
+}
+#endif // IS_PY3K
 #else
 
 
@@ -810,7 +830,6 @@ jobjectRefType GetObjectRefType(jobject obj) {
     return (*java)->GetObjectRefType(java, obj);
 }
 
-
 /**************************************************************************
  * Method to start the Python runtime.
  *************************************************************************/
@@ -838,7 +857,14 @@ JNIEXPORT jint JNICALL Java_org_pybee_rubicon_Python_start(JNIEnv *env, jobject 
 
     if (pythonHome) {
         LOG_D("PYTHONHOME=%s", (*env)->GetStringUTFChars(env, pythonHome, NULL));
-        Py_SetPythonHome((char *)(*env)->GetStringUTFChars(env, pythonHome, NULL));
+#ifndef IS_PY3K
+        Py_SetPythonHome((char*)(*env)->GetStringUTFChars(env, pythonHome, NULL));
+#else
+        sprintf(pythonPathVar, "PYTHONHOME=%s", (*env)->GetStringUTFChars(env, pythonHome, NULL));
+        putenv(pythonPathVar);
+#endif
+        sprintf(pythonPathVar, "TMP=%s/../tmp", (*env)->GetStringUTFChars(env, pythonHome, NULL));
+        putenv(pythonPathVar);
     } else {
         LOG_D("Using default PYTHONHOME");
     }
@@ -861,6 +887,11 @@ JNIEXPORT jint JNICALL Java_org_pybee_rubicon_Python_start(JNIEnv *env, jobject 
     } else {
         LOG_D("Not setting RUBICON_LIBRARY");
     }
+
+#ifdef IS_PY3K
+    PyImport_AppendInittab("android", PyInit_android);
+#endif
+
 #endif
 
     // putenv("PYTHONVERBOSE=1");
@@ -869,14 +900,16 @@ JNIEXPORT jint JNICALL Java_org_pybee_rubicon_Python_start(JNIEnv *env, jobject 
     Py_Initialize();
     // PySys_SetArgv(argc, argv);
 
+    LOG_I("Initializing Python threads...");
     // If other modules are using threads, we need to initialize them before.
     PyEval_InitThreads();
 
 #ifdef ANDROID
     // Initialize and bootstrap the Android logging module
     LOG_I("Initializing Android logging module...");
+#ifndef IS_PY3K
     initandroid();
-
+#endif
     LOG_D("Bootstrap Android logging...");
     ret = PyRun_SimpleString(
         "import sys\n" \
@@ -895,7 +928,8 @@ JNIEXPORT jint JNICALL Java_org_pybee_rubicon_Python_start(JNIEnv *env, jobject 
         "        return\n" \
         "sys.stdout = LogFile(android.info)\n" \
         "sys.stderr = LogFile(android.error)\n" \
-        "print 'Android Logging bootstrap active.'");
+        "print('Android Logging bootstrap active.')"
+        );
     if (ret != 0) {
         LOG_E("Exception during logging bootstrap.");
     } else {
