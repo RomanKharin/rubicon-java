@@ -1,11 +1,11 @@
 #include <jni.h>
 #include <stdio.h>
+#include <stdlib.h>
 #ifdef LIBPYTHON_RTLD_GLOBAL
 #include <dlfcn.h>
 #endif
 
 #ifdef ANDROID
-#include <errno.h>
 #ifndef __ANDROID__
 #define __ANDROID__
 #endif
@@ -863,8 +863,11 @@ JNIEXPORT jint JNICALL Java_org_pybee_rubicon_Python_start(JNIEnv *env, jobject 
         sprintf(pythonPathVar, "PYTHONHOME=%s", (*env)->GetStringUTFChars(env, pythonHome, NULL));
         putenv(pythonPathVar);
 #endif
-        sprintf(pythonPathVar, "TMP=%s/../tmp", (*env)->GetStringUTFChars(env, pythonHome, NULL));
+#ifdef ANDROID
+        sprintf(pythonPathVar, "TEMP=%s/../tmp", (*env)->GetStringUTFChars(env, pythonHome, NULL));
         putenv(pythonPathVar);
+        system("/system/bin/sh mkdir $TEMP");
+#endif
     } else {
         LOG_D("Using default PYTHONHOME");
     }
