@@ -866,7 +866,8 @@ JNIEXPORT jint JNICALL Java_org_pybee_rubicon_Python_start(JNIEnv *env, jobject 
 #ifdef ANDROID
         sprintf(pythonPathVar, "TEMP=%s/../tmp", (*env)->GetStringUTFChars(env, pythonHome, NULL));
         putenv(pythonPathVar);
-        system("/system/bin/sh mkdir $TEMP");
+        sprintf(pythonPathVar, "%s/../tmp", (*env)->GetStringUTFChars(env, pythonHome, NULL));
+        mkdir(pythonPathVar, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 #endif
     } else {
         LOG_D("Using default PYTHONHOME");
