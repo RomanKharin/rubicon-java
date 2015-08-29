@@ -57,6 +57,20 @@ public class Python {
      */
     public static native void stop();
 
+
+    /**
+     * Ensure that the current thread is ready to call the Python C API 
+     * regardless of the current state of Python, or of the global interpreter 
+     * lock.
+     */
+    public static native void thread_ensure();
+
+    /**
+     * Release any resources previously acquired. 
+     */
+    public static native void thread_release();
+
+
     /**
      * Create a proxy implementation that directs towards a Python instance.
      *

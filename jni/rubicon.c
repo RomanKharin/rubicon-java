@@ -1012,6 +1012,20 @@ JNIEXPORT void JNICALL Java_org_pybee_rubicon_Python_stop(JNIEnv *env, jobject t
     }
 }
 
+/**************************************************************************
+ * Ensure thread can access python environment.
+ *************************************************************************/
+JNIEXPORT void JNICALL Java_org_pybee_rubicon_Python_thread_ensure(JNIEnv *env, jobject thisObj) {
+    PyGILState_Ensure();
+}
+
+/**************************************************************************
+ * Release thread.
+ *************************************************************************/
+JNIEXPORT void JNICALL Java_org_pybee_rubicon_Python_thread_release(JNIEnv *env, jobject thisObj) {
+    PyGILState_Release();
+}
+
 
 /**************************************************************************
  * Implementation of the InvocationHandler used by all Python objects.
