@@ -1016,15 +1016,18 @@ JNIEXPORT void JNICALL Java_org_pybee_rubicon_Python_stop(JNIEnv *env, jobject t
 /**************************************************************************
  * Ensure thread can access python environment.
  *************************************************************************/
-JNIEXPORT void JNICALL Java_org_pybee_rubicon_Python_thread_ensure(JNIEnv *env, jobject thisObj) {
-    PyGILState_Ensure();
+JNIEXPORT jobject JNICALL Java_org_pybee_rubicon_Python_thread_ensure(JNIEnv *env, jobject thisObj) {
+    PyGILState_STATE state = PyGILState_Ensure();
+    jobject bb = (*env)->NewDirectByteBuffer(env, (void*) state, sizeof(PyGILState_STATE));
+    return bb;
 }
 
 /**************************************************************************
  * Release thread.
  *************************************************************************/
-JNIEXPORT void JNICALL Java_org_pybee_rubicon_Python_thread_release(JNIEnv *env, jobject thisObj) {
-    PyGILState_Release();
+JNIEXPORT void JNICALL Java_org_pybee_rubicon_Python_thread_release(JNIEnv *env, jobject thisObj, jobject stateObj) {
+    PyGILState_STATE state = (PyGILState_STATE) (*env)->GetDirectBufferAddress(env, stateObj);
+    PyGILState_Release(state);
 }
 
 

@@ -63,12 +63,12 @@ public class Python {
      * regardless of the current state of Python, or of the global interpreter 
      * lock.
      */
-    public static native void thread_ensure();
+    public static native Object thread_ensure();
 
     /**
      * Release any resources previously acquired. 
      */
-    public static native void thread_release();
+    public static native void thread_release(Object state);
 
 
     /**
