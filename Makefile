@@ -36,7 +36,7 @@ dist/rubicon.jar: org/pybee/rubicon/Python.class org/pybee/rubicon/PythonInstanc
 	mkdir -p dist
 	jar -cvf dist/rubicon.jar org/pybee/rubicon/Python.class org/pybee/rubicon/PythonInstance.class
 
-dist/test.jar: org/pybee/rubicon/test/BaseExample.class org/pybee/rubicon/test/Example.class org/pybee/rubicon/test/ICallback.class org/pybee/rubicon/test/AbstractCallback.class org/pybee/rubicon/test/Thing.class org/pybee/rubicon/test/Test.class
+dist/test.jar: org/pybee/rubicon/test/BaseExample.class org/pybee/rubicon/test/Example.class org/pybee/rubicon/test/ICallback.class org/pybee/rubicon/test/AbstractCallback.class org/pybee/rubicon/test/Thing.class org/pybee/rubicon/test/ThreadRun.class org/pybee/rubicon/test/Test.class
 	mkdir -p dist
 	jar -cvf dist/test.jar org/pybee/rubicon/test/*.class
 
